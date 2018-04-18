@@ -31,11 +31,12 @@ git submodule init
 git submodule update
 ```
 
-Then you need to get Coq 8.6 (later & earlier may work):
+Then you need to get Coq (tested with 8.6, 8.7.2, and 8.8.0: earlier/later may
+work):
 
 ```
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam update && opam install coq.8.6
+opam update && opam install coq.8.8.0
 ```
 
 Once Coq has been installed, you can build the `literatecoq` library:
