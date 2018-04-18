@@ -1,0 +1,3 @@
+-Q src ""
+-Q literatecoq LiterateCoq
+src/Proofs.v

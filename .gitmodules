@@ -1,0 +1,3 @@
+[submodule "literatecoq"]
+	path = literatecoq
+	url = git@github.com:dbp/literatecoq.git
