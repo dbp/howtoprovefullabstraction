@@ -175,9 +175,9 @@ Lemma back_translation_equiv :
 Proof.
   hint_rewrite eval_step, eval_step'.
   intros.
-  repeat match goal with
-         | [ c : OpCtxt |- _] => destruct c
-         end; unfold link_Op;
+  match goal with
+  | [ c : OpCtxt |- _] => destruct c
+  end; 
     match goal with
     | [ H : backtranslate _ = _ |- _] => invert H
     end; simpl; iauto. 
@@ -201,5 +201,4 @@ Proof.
   erewrite back_translation_equiv with (e := e1) (c' := c'); iauto;
   erewrite back_translation_equiv with (e := e2) (c' := c'); iauto;
   specialize (eqsource c'); simpl in *; congruence.
-
 Qed.
