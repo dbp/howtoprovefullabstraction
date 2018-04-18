@@ -34,7 +34,7 @@ Fixpoint compile_Expr (e : Expr) : list Op :=
 
 Fixpoint eval_Op (s : list Z) (ops : list Op) : option Z :=
   match (ops, s) with
-  | ([], n :: _) => Some n
+  | ([], [n]) => Some n
   | (Push z :: rest, _) => eval_Op (z :: s) rest 
   | (Add :: rest, n1 :: n2 :: ns) => eval_Op (n1 + n2 :: ns)%Z rest
   | (Sub :: rest, n1 :: n2 :: ns) => eval_Op (n1 - n2 :: ns)%Z rest
@@ -90,26 +90,21 @@ Fixpoint link_Expr (c : ExprCtxt) (e : Expr) : Expr :=
 Definition ctxtequiv_Expr (e1 e2 : Expr) : Prop :=
   forall c : ExprCtxt, eval_Expr (link_Expr c e1) = eval_Expr (link_Expr c e2).
 
+Inductive OpCtxt : Set :=
+| PushAdd : Z -> OpCtxt
+| PushSub : Z -> OpCtxt
+| Empty : OpCtxt.
 
-Definition backtranslate (o1 o2 : option Op) : option ExprCtxt :=
-  match (o1,o2) with
-  | (Some (Push n), Some Add) => Some (Plus1 Hole (Num n))
-  | (Some (Push n), Some Sub) => Some (Minus1 Hole (Num n))
-  | (None, None) => Some Hole
-  | _ => None
+Definition link_Op  (c : OpCtxt) (p : list Op) : list Op :=
+  match c with
+  | PushAdd n => Push n :: p ++ [Add]
+  | PushSub n => Push n :: p ++ [Sub]
+  | Empty => p
   end.
 
-Definition link_Op (c1 c2 : option Op) (p : list Op) : list Op :=
-  match (c1, c2) with
-  | (Some c1, Some c2) => c1 :: p ++ [c2]
-  | (Some c1, None) => c1 :: p
-  | (None, Some c2) => p ++ [c2]
-  | (None, None) => p
-  end.
 
 Definition ctxtequiv_Op (p1 p2 : list Op) : Prop :=
-  forall c1 c2 : option Op, backtranslate c1 c2 <> None ->
-                       eval_Op [] (link_Op c1 c2 p1) = eval_Op [] (link_Op c1 c2 p2).
+  forall c : OpCtxt, eval_Op [] (link_Op c p1) = eval_Op [] (link_Op c p2).
 
 Lemma equivalence_reflection :
   forall e1 e2 : Expr,
@@ -125,8 +120,7 @@ Proof.
     (* NOTE(dbp 2018-04-16): Only the base case, for Hole, remains *)
     [idtac].
   (* NOTE(dbp 2018-04-16): In the hole case, we specialize the target ctxt equiv hypothesis to empty *)
-  assert (bt : backtranslate None None <> None) by (unfold backtranslate; congruence). 
-  specialize (eqtarget None None bt);
+  specialize (eqtarget Empty);
     simpl in eqtarget; repeat rewrite app_nil_r in eqtarget.
   unfold link_Op in eqtarget.
   
@@ -163,27 +157,29 @@ Proof.
   congruence.
 Qed.
 
-
+Definition backtranslate (c : OpCtxt) : ExprCtxt :=
+  match c with
+  | PushAdd n => Plus1 Hole (Num n)
+  | PushSub n => Minus1 Hole (Num n)
+  | Empty => Hole
+  end.
 
 Lemma back_translation_equiv :
-  forall c1 c2 : option Op,
+  forall c : OpCtxt,
   forall p : list Op,
   forall e : Expr,
-  forall c : ExprCtxt, 
+  forall c' : ExprCtxt, 
     compile_Expr e = p ->
-    backtranslate c1 c2 = Some c ->
-    eval_Op [] (link_Op c1 c2 p) = Some (eval_Expr (link_Expr c e)).
+    backtranslate c = c' ->
+    eval_Op [] (link_Op c p) = Some (eval_Expr (link_Expr c' e)).
 Proof.
   hint_rewrite eval_step, eval_step'.
   intros.
   repeat match goal with
-         | [ c : option Op |- _] => destruct c
+         | [ c : OpCtxt |- _] => destruct c
          end; unfold link_Op;
-    repeat match goal with
-           | [ o : Op |- _] => destruct o
-           end;
     match goal with
-    | [ H : backtranslate _ _ = _ |- _] => invert H
+    | [ H : backtranslate _ = _ |- _] => invert H
     end; simpl; iauto. 
 Qed.
 
@@ -199,9 +195,11 @@ Proof.
   unfold ctxtequiv_Expr, ctxtequiv_Op in *.
   intros.
 
-  remember (backtranslate c1 c2) as c.
-  destruct c; iauto.
-  erewrite back_translation_equiv with (e := e1); iauto.
-  erewrite back_translation_equiv with (e := e2); iauto.
-  specialize (eqsource e); simpl in *; congruence.
+  remember (backtranslate c) as c'.
+  destruct c; iauto;
+
+  erewrite back_translation_equiv with (e := e1) (c' := c'); iauto;
+  erewrite back_translation_equiv with (e := e2) (c' := c'); iauto;
+  specialize (eqsource c'); simpl in *; congruence.
+
 Qed.
