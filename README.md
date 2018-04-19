@@ -17,7 +17,7 @@ had hinted Y somewhere earlier.
 
 ## Writeup
 
-The accompanying writeup for this compiler is at [https://dbp.io/drafts/how-to-prove-a-compiler-fully-abstract.html](https://dbp.io/drafts/how-to-prove-a-compiler-fully-abstract.html).
+The accompanying writeup for this compiler is at [https://dbp.io/essays/2018-04-19-how-to-prove-a-compiler-fully-abstract.html](https://dbp.io/essays/2018-04-19-how-to-prove-a-compiler-fully-abstract.html).
 
 ## Setup
 
