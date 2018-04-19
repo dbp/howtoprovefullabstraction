@@ -28,16 +28,16 @@ Inductive Op : Set :=
 Fixpoint compile_Expr (e : Expr) : list Op :=
   match e with
   | Num n => [Push n]
-  | Plus e1 e2 => compile_Expr e2 ++ compile_Expr e1 ++ [Add]
-  | Minus e1 e2 => compile_Expr e2 ++ compile_Expr e1 ++ [Sub]
+  | Plus e1 e2 => compile_Expr e1 ++ compile_Expr e2 ++ [Add]
+  | Minus e1 e2 => compile_Expr e1 ++ compile_Expr e2 ++ [Sub]
   end.
 
 Fixpoint eval_Op (s : list Z) (ops : list Op) : option Z :=
   match (ops, s) with
   | ([], [n]) => Some n
   | (Push z :: rest, _) => eval_Op (z :: s) rest 
-  | (Add :: rest, n1 :: n2 :: ns) => eval_Op (n1 + n2 :: ns)%Z rest
-  | (Sub :: rest, n1 :: n2 :: ns) => eval_Op (n1 - n2 :: ns)%Z rest
+  | (Add :: rest, n2 :: n1 :: ns) => eval_Op (n1 + n2 :: ns)%Z rest
+  | (Sub :: rest, n2 :: n1 :: ns) => eval_Op (n1 - n2 :: ns)%Z rest
   | (OpCount :: rest, _) => eval_Op (Z.of_nat (length rest) :: s) rest
   | _ => None
   end.
@@ -159,8 +159,8 @@ Qed.
 
 Definition backtranslate (c : OpCtxt) : ExprCtxt :=
   match c with
-  | PushAdd n => Plus1 Hole (Num n)
-  | PushSub n => Minus1 Hole (Num n)
+  | PushAdd n => Plus2 (Num n) Hole
+  | PushSub n => Minus2 (Num n) Hole
   | Empty => Hole
   end.
 
